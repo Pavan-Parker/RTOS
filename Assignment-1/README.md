@@ -1,6 +1,5 @@
 # Assignment - 1
 ## Description
-
 ```
 timing.py -c [userCount] -p [1 if parllel else 0]
     > spawns server and clients' executables of the given userCount.
@@ -22,6 +21,7 @@ timingReport.py -p [1 if parllel else 0]
 | 200 | 2.5290000000000035 ms |
 | 400 | 2.2719999999999962 ms |
 | 500 | 2.694000000000085 ms |
+| 550 | 2.634000000000025 ms |
 
 **For (n-2) parllel users**
 | No of Clients | Time taken |
@@ -32,3 +32,9 @@ timingReport.py -p [1 if parllel else 0]
 | 200 | 128.9 ms |
 | 400 | 225.71799999999996 ms |
 | 500 | 314.9080000000001 ms |
+| 550 | 369.51500000000016 ms |
+## Notes and Observations
++    I've taken (n-2) parllel user convos case, as it is the worst case and variation with user count could be observed easily.
+
++    For no parllel convos case, it seems delay is almost invariant with user count
++    Where as in parllel convos case, it seems delay seems to be increasing exponentially w.r.t usercount. (just by eyeballing)
