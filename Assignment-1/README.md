@@ -12,7 +12,7 @@ timingReport.py -p [1 if parllel else 0]
     > prints the time taken for each user count in [10,50,100,200,400,500] using timing.py . 
 ```
 ## Results
-**No parllel users**
+**For no parllel users**
 
 | No of Clients | Time taken |
 | ------------- |-----------:|
@@ -23,7 +23,7 @@ timingReport.py -p [1 if parllel else 0]
 | 400 | 2.2719999999999962 ms |
 | 500 | 2.694000000000085 ms |
 
-**(n-2) parllel user**
+**For (n-2) parllel users**
 | No of Clients | Time taken |
 | ------------- |-----------:|
 | 10 | 3.144000000000008 ms|
