@@ -44,10 +44,10 @@ threads.append(z)
 start=time.clock()
 #start=timeit.timeit()
 allSpawns[-2].sendline("SENDGROUP 1 SUPLASTONE")
-if(allSpawns[-1].expect(['SUPLASTONE'],timeout=5)==0):
+if(allSpawns[-1].expect(['SUPLASTONE\r\n'],timeout=20)==0):
     end=time.clock()
     #end=timeit.timeit()
-    print("time taken " + str((end-start)*1000)+" ms")
+    print(str((end-start)*1000)+" ms")
 
 map(lambda x:x._stop() , threads)
 map(lambda x:x.close() , allSpawns)

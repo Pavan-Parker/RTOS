@@ -12,9 +12,11 @@ args = parser.parse_args()
 
 if(args.parllel=='1'): print("******PARLLEL********")
 else:print("******NORMAL********")
-for i in range(10,110,10):
+print("| No of Clients | Time taken |")
+print("| ------------- |-----------:|")
+for i in [10,50,100,200,400,500]:
     time.sleep(5)
     x=pexpect.spawn("python3 timing.py -c "+str(i)+ " -p "+args.parllel)
-    print("For "+ str(i)+ " clients," + str(x.readline()))
+    print("| "+ str(i)+ " | " + str(x.readline().decode('utf-8'))+" |")
     x.close()
 sys.exit()
