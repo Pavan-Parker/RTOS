@@ -8,13 +8,12 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
+#include <stdbool.h>
+#include <signal.h>
 
-void * doRecieving(void * sockID){
-
-	int clientSocket = *((int *) sockID);
-
-	while(1){
-
+void * reception(void * sockID){
+		int clientSocket = *((int *) sockID);
+		while(1){
 		char data[1024];
 		int read = recv(clientSocket,data,1024,0);
 		data[read] = '\0';
@@ -24,41 +23,56 @@ void * doRecieving(void * sockID){
 
 }
 
+
+void catch(int dummy)
+	{
+     	char  c;
+     	signal(dummy, SIG_IGN);
+     	printf("EXIT? [y/n] ");
+     	c = getchar();
+     	if (c == 'y' || c == 'Y')
+        	exit(0);
+     	else
+        	signal(SIGINT, catch);
+     	getchar();
+	}
+
 int main(int argc,char *argv[]){
 
-	int portno;
+	int port;
 	char username[100];
-
-	if(argc > 3) {
-		printf("too many arguments");
-		exit(1);
-	}
-	portno = atoi(argv[2]);
+	
+	port = atoi(argv[2]);
 	strcpy(username,argv[1]);
 
 	int clientSocket = socket(PF_INET, SOCK_STREAM, 0);
 
+//	SETTING SERVER ATTRIBUTES
 	struct sockaddr_in serverAddr;
-
 	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_port = htons(portno);
+	serverAddr.sin_port = htons(port);
 	serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	if(connect(clientSocket, (struct sockaddr*) &serverAddr, sizeof(serverAddr)) == -1) return 0;
 
-	printf("Connection established ............\n");
-	
+	printf("CONNECTED TO THE SERVER\n");
+
+//	INTRODUCE MYSELF WITH USERNAME
 	send(clientSocket,username,1024,0);
 
 	pthread_t thread;
-	pthread_create(&thread, NULL, doRecieving, (void *) &clientSocket );
+	pthread_create(&thread, NULL, reception, (void *) &clientSocket );
 
-	while(1){
+//	CATCHES THE SIGINT SIGNAL
+	signal(SIGINT, catch);
+
+//  TAKES USER INPUT AND SEND IT ACCORDINGLY TO SERVER TO PARSE
+	while(true){
 
 		char input[1024];
 		scanf("%s",input);
 
-		if(strcmp(input,"SEND") == 0){
+		if(strcmp(input,"ONEONE") == 0){
 
 			send(clientSocket,input,1024,0);
 			
@@ -69,7 +83,7 @@ int main(int argc,char *argv[]){
 			send(clientSocket,input,1024,0);
 
 		}
-		if(strcmp(input,"SENDGROUP") == 0){
+		if(strcmp(input,"BROADCAST") == 0){
 
 			send(clientSocket,input,1024,0);
 			
@@ -80,7 +94,7 @@ int main(int argc,char *argv[]){
 			send(clientSocket,input,1024,0);
 
 		}
-		if(strcmp(input,"CREATEGROUP") == 0){
+		if(strcmp(input,"GROUPUS") == 0){
 
 			send(clientSocket,input,1024,0);
 			
@@ -94,7 +108,6 @@ int main(int argc,char *argv[]){
 			for( int i=0;i<p;i++)
 			{
 			scanf("%s",input);
-			//printf("n=%d",atoi(input));			
 			send(clientSocket,input,1024,0);
 			}
 		}
