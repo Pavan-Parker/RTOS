@@ -49,10 +49,7 @@ void * doNetworking(void * ClientDetail){
 	char username[100];
 		
 	recv(clientSocket,username,1024,0);
-	//printf("Clinet %s connected", username);
-
-	//strcpy(username,clientDetail -> username);
-
+	
 	printf("%s with ID : %d, connected.\n",username,index + 1);
 	
 	
@@ -64,23 +61,6 @@ void * doNetworking(void * ClientDetail){
 
 		char output[1024];
 
-/*
-		if(strcmp(data,"LIST") == 0){
-
-			int l = 0;
-
-			for(int i = 0 ; i < clientCount ; i ++){
-
-				if(i != index)
-					l += snprintf(output + l,1024,"Client %d is at socket %d.\n",i + 1,Client[i].sockID);
-
-			}
-
-			send(clientSocket,output,1024,0);
-			continue;
-
-		}
-*/
 		if(strcmp(data,"SEND") == 0){
 			read = recv(clientSocket,data,1024,0);
 			data[read] = '\0';
@@ -155,9 +135,6 @@ void * doNetworking(void * ClientDetail){
 				(Group[groupCount].people)[i]=atoi(data);
 			}		)				
 			groupCount ++;
-			//printf("Groupcreated");
-			//printf("details=%d , %d %d %d",Group[groupCount-1].index,Group[groupCount-1].no_people,(Group[groupCount-1].people)[0],(Group[groupCount-1].people)[1]);
-			//pthread_create(&thread[clientCount+groupCount], NULL, doNetworking, (void *) &Group[GroupCount]);
 		})
 
 
