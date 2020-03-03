@@ -10,6 +10,15 @@
 #include <arpa/inet.h>
 #include <stdbool.h>
 #include <signal.h>
+#include <pulse/simple.h>
+#include <pulse/error.h>
+#include <pulse/gccmacro.h>
+#include <errno.h>
+
+#define BUFSIZE 2024001
+char request[20]="BUSY!";
+char acknowlegment[20]="FREE!";
+int serverBusy=0;
 
 void * reception(void * sockID){
 		int clientSocket = *((int *) sockID);
@@ -18,6 +27,9 @@ void * reception(void * sockID){
 		int read = recv(clientSocket,data,1024,0);
 		data[read] = '\0';
 		printf("%s\n",data);
+
+		if(strcmp(read,request)){serverBusy=1;}
+		if(strcmp(read,acknowlegment)){serverBusy=0;}
 
 	}
 
@@ -66,50 +78,40 @@ int main(int argc,char *argv[]){
 //	CATCHES THE SIGINT SIGNAL
 	signal(SIGINT, catch);
 
-//  TAKES USER INPUT AND SEND IT ACCORDINGLY TO SERVER TO PARSE
-	while(true){
+//	DECLARING AND SETTING ATTRIBUTES OF AUDIO - SAMPLING AND NO OF CHANNELS
+	pa_simple *s1,*s2;
+	pa_sample_spec ss;
+	ss.format = PA_SAMPLE_S16NE;
+	ss.channels = 2;
+	ss.rate = 28100;
+	int buf[BUFSIZE];
 
-		char input[1024];
-		scanf("%s",input);
+//	RECORDS WHENEVER USER HITS ENTER
 
-		if(strcmp(input,"ONEONE") == 0){
+	char ch[2];
+	while(fgets(ch,2,stdin)&&!(request))
+	{
 
-			send(clientSocket,input,1024,0);
-			
-			scanf("%s",input);
-			send(clientSocket,input,1024,0);
-			
-			scanf("%[^\n]s",input);
-			send(clientSocket,input,1024,0);
+//	SET THE GLOBAL REQUEST FLAG
+		send(clientSocket,request,sizeof(request),NULL);
 
-		}
-		if(strcmp(input,"BROADCAST") == 0){
+//	CREATING AND CONNECTING STREAMS FOR RECORDING AND PLAYBACK 
+		s1 = pa_simple_new(NULL,"listen",PA_STREAM_RECORD,NULL,"listen",&ss,NULL,NULL,NULL);
 
-			send(clientSocket,input,1024,0);
-			
-			scanf("%s",input);
-			send(clientSocket,input,1024,0);
+//	READ RECORDED INTO BUFFER		
+		printf("you're in!\n");
+		if( pa_simple_read(s1,buf,BUFSIZE,NULL)){printf("error recording\n");}
+		else{printf("recorded\n");}
 
-			scanf("%[^\n]s",input);
-			send(clientSocket,input,1024,0);
+//	FLUSH AND FREE THE STREAM
+		pa_simple_flush(s1,NULL);
+		pa_simple_free(s1);
 
-		}
-		if(strcmp(input,"GROUPUS") == 0){
+//	SEND THE RECORDED AUDIO
+		send(clientSocket,buf,BUFSIZE,NULL);
 
-			send(clientSocket,input,1024,0);
-			
-			scanf("%s",input);
-			send(clientSocket,input,1024,0);
-			
-			scanf("%s",input);
-			send(clientSocket,input,1024,0);
+//	SET THE GLOBAL ACKNOWLEDGMENT FLAG
+		send(clientSocket,acknowlegment,sizeof(acknowlegment),NULL);
 
-			int p=atoi(input);
-			for( int i=0;i<p;i++)
-			{
-			scanf("%s",input);
-			send(clientSocket,input,1024,0);
-			}
-		}
 	}
 }
