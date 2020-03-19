@@ -11,7 +11,16 @@
 
 int clientCount = 0;
 int groupCount = 0;
+#define BUFSIZE 2024001
 
+/*
+int requestFlag = 0;
+int acknowlegmentFlag=1;
+
+char chill[20]="CHILL";
+char request[20]="BUSY!";
+char acknowlegment[20]="DONE!";
+*/
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
@@ -52,16 +61,38 @@ void * reception(void * attrClient){
 	recv(clientSocket,username,1024,0);
 	strcpy(Client[index].username,username);
 	printf("USER %s JOINED AND ID : %d IS ALLOTED.\n",username,index + 1);
-	
+
+
+/*
+//	STATING THE CLIENT THE CURRENT STATE	
+	if(requestFlag){send(clientSocket,request,sizeof(request),NULL);}
+	else{send(clientSocket,chill,sizeof(chill),NULL);}
+	if(!acknowlegmentFlag){send(clientSocket,acknowlegment,sizeof(acknowlegment),NULL);}
+	else(send(clientSocket,chill,sizeof(),NULL);)
+*/
+
 //	PARSING THE CLIENT'S REQUEST	
-	while(1){
+	while(1)
+	{
 		char data[1024];
 		int read = recv(clientSocket,data,1024,0);
-		data[read] = '\0';
-
 		char output[1024];
 
+		for(int i=0;i<clientCount;i++)
+		{
+			if(Client[i].sockID!=clientSocket){send(Client[i].sockID,data,BUFSIZE,NULL);}	
+		}
+
+	}
+	return NULL;
+
+	
+
+}
+/*
 //		IF CLIENT WANTS TO SEND A ONE TO ONE MESSAGE
+		
+
 
 		if(strcmp(data,"ONEONE") == 0){
 			read = recv(clientSocket,data,1024,0);
@@ -148,14 +179,14 @@ void * reception(void * attrClient){
 		groupCount ++;
 		
 		}
+		else{
+
+		}
+*/
 
 
 
-	}
-
-	return NULL;
-
-}
+	
 
 int main(int argc,char *argv[]){
 

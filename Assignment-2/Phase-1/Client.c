@@ -16,22 +16,36 @@
 #include <errno.h>
 
 #define BUFSIZE 2024001
-char request[20]="BUSY!";
-char acknowlegment[20]="FREE!";
-int serverBusy=0;
+//int requestFlag = 0;
+//int acknowlegmentFlag=1;
+
+//char chill[20]="CHILL";
+//char request[20]="BUSY!";
+//char acknowlegment[20]="DONE!";
 
 void * reception(void * sockID){
+		pa_simple *s2;
+		pa_sample_spec ss;
+		ss.format = PA_SAMPLE_S16NE;
+		ss.channels = 2;
+		ss.rate = 44100;
 		int clientSocket = *((int *) sockID);
-		while(1){
-		char data[1024];
-		int read = recv(clientSocket,data,1024,0);
-		data[read] = '\0';
-		printf("%s\n",data);
+		while(1)
+		{
+			char data[1024];
+			int read = recv(clientSocket,data,BUFSIZE,NULL);
+	    	s2 = pa_simple_new(NULL,"talking",PA_STREAM_PLAYBACK,NULL,"talking",&ss,NULL,NULL,NULL);
+			if( pa_simple_read(s2,data,BUFSIZE,NULL)){printf("error playing\n");}
+			pa_simple_write(s2,data,BUFSIZE,NULL);
+	    	pa_simple_flush(s2,NULL);
+	    	pa_simple_free(s2);
+		}
 
-		if(strcmp(read,request)){serverBusy=1;}
-		if(strcmp(read,acknowlegment)){serverBusy=0;}
 
-	}
+//		if(strcmp(read,request)){requestFlag=1;}
+//		if(strcmp(read,acknowlegment)){acknowlegmentFlag=1;}
+
+
 
 }
 
@@ -79,7 +93,7 @@ int main(int argc,char *argv[]){
 	signal(SIGINT, catch);
 
 //	DECLARING AND SETTING ATTRIBUTES OF AUDIO - SAMPLING AND NO OF CHANNELS
-	pa_simple *s1,*s2;
+	pa_simple *s1;
 	pa_sample_spec ss;
 	ss.format = PA_SAMPLE_S16NE;
 	ss.channels = 2;
@@ -89,11 +103,9 @@ int main(int argc,char *argv[]){
 //	RECORDS WHENEVER USER HITS ENTER
 
 	char ch[2];
-	while(fgets(ch,2,stdin)&&!(request))
+//	while(fgets(ch,2,stdin)&&(!request)&&(acknowlegment))
+	while(fgets(ch,2,stdin))
 	{
-
-//	SET THE GLOBAL REQUEST FLAG
-		send(clientSocket,request,sizeof(request),NULL);
 
 //	CREATING AND CONNECTING STREAMS FOR RECORDING AND PLAYBACK 
 		s1 = pa_simple_new(NULL,"listen",PA_STREAM_RECORD,NULL,"listen",&ss,NULL,NULL,NULL);
@@ -101,7 +113,6 @@ int main(int argc,char *argv[]){
 //	READ RECORDED INTO BUFFER		
 		printf("you're in!\n");
 		if( pa_simple_read(s1,buf,BUFSIZE,NULL)){printf("error recording\n");}
-		else{printf("recorded\n");}
 
 //	FLUSH AND FREE THE STREAM
 		pa_simple_flush(s1,NULL);
@@ -109,9 +120,6 @@ int main(int argc,char *argv[]){
 
 //	SEND THE RECORDED AUDIO
 		send(clientSocket,buf,BUFSIZE,NULL);
-
-//	SET THE GLOBAL ACKNOWLEDGMENT FLAG
-		send(clientSocket,acknowlegment,sizeof(acknowlegment),NULL);
 
 	}
 }
