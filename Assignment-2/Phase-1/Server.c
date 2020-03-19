@@ -52,9 +52,9 @@ pthread_t thread[1024];
 void * reception(void * attrClient){
 
 //	SETTING CLIENT ATTRIBUTES
-	struct client* attrClient = (struct client*) attrClient;
-	int index = attrClient -> index;
-	int clientSocket = attrClient -> sockID;
+	struct client* attrClient1 = (struct client*) attrClient;
+	int index = attrClient1 -> index;
+	int clientSocket = attrClient1 -> sockID;
 	char username[1024];
 		
 //	RECEIVE FIRST MESSAGE FROM CLIENT WHICH IS HIS USERNAME
@@ -86,7 +86,7 @@ void * reception(void * attrClient){
 	}
 	return NULL;
 
-	
+
 
 }
 /*
