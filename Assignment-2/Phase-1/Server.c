@@ -11,8 +11,8 @@
 
 int clientCount = 0;
 int groupCount = 0;
-#define BUFSIZE 2024001
-
+#define BUFSIZE 202400
+#define RAND_MAX 1000
 /*
 int requestFlag = 0;
 int acknowlegmentFlag=1;

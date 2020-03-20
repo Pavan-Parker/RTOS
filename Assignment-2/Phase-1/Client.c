@@ -13,9 +13,11 @@
 #include <pulse/simple.h>
 #include <pulse/error.h>
 #include <pulse/gccmacro.h>
+
 #include <errno.h>
 
-#define BUFSIZE 2024001
+#define BUFSIZE 202400
+#define RAND_MAX 1000
 //int requestFlag = 0;
 //int acknowlegmentFlag=1;
 
@@ -30,11 +32,16 @@ void * reception(void * sockID){
 		ss.channels = 2;
 		ss.rate = 44100;
 		int clientSocket = *((int *) sockID);
+		char name[]="talking-";
+		char randNum[4];
+		sprintf(randNum,"%d",rand());
+		strcat(name,randNum);
 		while(1)
 		{
 			char data[1024];
+					
 			int read = recv(clientSocket,data,BUFSIZE,NULL);
-	    	s2 = pa_simple_new(NULL,"talking",PA_STREAM_PLAYBACK,NULL,"talking",&ss,NULL,NULL,NULL);
+	    	s2 = pa_simple_new(NULL,name,PA_STREAM_PLAYBACK,NULL,name,&ss,NULL,NULL,NULL);
 			if( pa_simple_read(s2,data,BUFSIZE,NULL)){printf("error playing\n");}
 			pa_simple_write(s2,data,BUFSIZE,NULL);
 	    	pa_simple_flush(s2,NULL);
@@ -82,7 +89,7 @@ int main(int argc,char *argv[]){
 	if(connect(clientSocket, (struct sockaddr*) &serverAddr, sizeof(serverAddr)) == -1) return 0;
 
 	printf("CONNECTED TO THE SERVER\n");
-
+//	printf("%d",&clientSocket);
 //	INTRODUCE MYSELF WITH USERNAME
 	send(clientSocket,username,1024,0);
 
@@ -101,14 +108,17 @@ int main(int argc,char *argv[]){
 	int buf[BUFSIZE];
 
 //	RECORDS WHENEVER USER HITS ENTER
-
+	char name[]="listening-";
+	char randNum[4];
+	sprintf(randNum,"%d",rand());
+	strcat(name,randNum);
 	char ch[2];
 //	while(fgets(ch,2,stdin)&&(!request)&&(acknowlegment))
-	while(fgets(ch,2,stdin))
+	while(1)
 	{
 
 //	CREATING AND CONNECTING STREAMS FOR RECORDING AND PLAYBACK 
-		s1 = pa_simple_new(NULL,"listen",PA_STREAM_RECORD,NULL,"listen",&ss,NULL,NULL,NULL);
+		s1 = pa_simple_new(NULL,name,PA_STREAM_RECORD,NULL,name,&ss,NULL,NULL,NULL);
 
 //	READ RECORDED INTO BUFFER		
 		printf("you're in!\n");
