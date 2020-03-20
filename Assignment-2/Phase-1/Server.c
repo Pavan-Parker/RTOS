@@ -8,11 +8,14 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
 
 int clientCount = 0;
 int groupCount = 0;
-#define BUFSIZE 202400
+
+#define BUFSIZE 48000
 #define RAND_MAX 1000
+
 /*
 int requestFlag = 0;
 int acknowlegmentFlag=1;
@@ -21,6 +24,8 @@ char chill[20]="CHILL";
 char request[20]="BUSY!";
 char acknowlegment[20]="DONE!";
 */
+
+
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
@@ -47,8 +52,11 @@ struct group{
 struct client Client[1024];
 struct group Group[1024];
 
+
 pthread_t thread[1024];
 
+
+int universalBuff[BUFSIZE];
 void * reception(void * attrClient){
 
 //	SETTING CLIENT ATTRIBUTES
@@ -72,17 +80,38 @@ void * reception(void * attrClient){
 */
 
 //	PARSING THE CLIENT'S REQUEST	
+	/*struct timeval tv;
+	tv.tv_sec = 0.1;
+	tv.tv_usec = 0;
+	setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+	*/
+	int mine=0;
+	int data[BUFSIZE];
 	while(1)
 	{
-		char data[1024];
-		int read = recv(clientSocket,data,1024,0);
-		char output[1024];
+		if(memcmp(data,universalBuff,sizeof(data))){
+			memcpy(data,universalBuff,sizeof(data));
+			printf("BUFFER ALTERED.\n");
+			 if(send(clientSocket,data,BUFSIZE,NULL)==-1){printf("ERROR SENDING NEW ONE\n");}
+			 else{printf("SENT NEW ONE");}
+			}
 
+		int read = recv(clientSocket,universalBuff,BUFSIZE,0);
+		if(read==-1){printf("ERROR RECEIVEING ");}
+		printf(" Mine is %d port\n",htons(clientSocket));
+/*
 		for(int i=0;i<clientCount;i++)
 		{
-			if(Client[i].sockID!=clientSocket){send(Client[i].sockID,data,BUFSIZE,NULL);}	
-		}
+			printf("sending to %d port\n",htons(Client[i].clientAddr.sin_port));
 
+			//send(Client[i].sockID,data,BUFSIZE,NULL);
+			if(htons(Client[i].clientAddr.sin_port )!= htons(clientSocket)){
+				if(send(Client[i].sockID,data,BUFSIZE,NULL)){printf("ERROR SENDING TO PORT %d\n",htons(Client[i].clientAddr.sin_port));}
+				else{printf("SENT TO PORT %d\n",htons(Client[i].clientAddr.sin_port));}
+				
+				}
+		}
+*/
 	}
 	return NULL;
 
