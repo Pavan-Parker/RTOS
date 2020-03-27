@@ -93,6 +93,7 @@ int main(int argc,char *argv[]){
 
 	printf("CONNECTED TO THE SERVER\n");
 	printf("my port no:  %d\n",clientSocket);
+
 //	INTRODUCE MYSELF WITH USERNAME
 	send(clientSocket,username,1024,0);
 
@@ -100,25 +101,28 @@ int main(int argc,char *argv[]){
 	pthread_create(&thread, NULL, reception, (void *) &clientSocket );
 
 //	CATCHES THE SIGINT SIGNAL
+
 	signal(SIGINT, catch);
 
 //	DECLARING AND SETTING ATTRIBUTES OF AUDIO - SAMPLING AND NO OF CHANNELS
+
 	pa_simple *s1;
 	pa_sample_spec ss;
 	ss.format = PA_SAMPLE_S16NE;
 	ss.channels = 2;
 	ss.rate = 48000;
+
 	int buf[BUFSIZE];
 
 //	RECORDS WHENEVER USER HITS ENTER
+
     srand(time(0)); 
 	char name[]="listening-";
 	char randNum[4];
 	sprintf(randNum,"%d",rand());
 	strcat(name,randNum);
 	char ch[2];
-//	while(fgets(ch,2,stdin)&&(!request)&&(acknowlegment))
-//	while(fgets(ch,2,stdin))
+
 	s1 = pa_simple_new(NULL,name,PA_STREAM_RECORD,NULL,name,&ss,NULL,NULL,NULL);
 	while(1)
 	{
@@ -126,12 +130,10 @@ int main(int argc,char *argv[]){
 //	CREATING AND CONNECTING STREAMS FOR RECORDING AND PLAYBACK 
 
 //	READ RECORDED INTO BUFFER		
-//		printf("you're in!\n");
 		if( pa_simple_read(s1,buf,BUFSIZE,NULL)<0){printf("error recording\n");}
 
 //	FLUSH AND FREE THE STREAM
 		pa_simple_flush(s1,NULL);
-//		pa_simple_free(s1);
 
 //	SEND THE RECORDED AUDIO
 		if(send(clientSocket,buf,BUFSIZE,NULL)==-1){printf("FAILED TO SEND TO SERVER\n");};

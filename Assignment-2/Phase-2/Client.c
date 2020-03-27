@@ -18,13 +18,11 @@
 
 #define BUFSIZE 48000
 #define RAND_MAX 1000
-//int requestFlag = 0;
-//int acknowlegmentFlag=1;
 
-//char chill[20]="CHILL";
-//char request[20]="BUSY!";
-//char acknowlegment[20]="DONE!";
 void * reception(void * sockID){
+
+// 		CREATING CONNECTION FROM SERVER FOR AUDIO-OUT
+
 		pa_simple *s2;
 		pa_sample_spec ss;
 		ss.format = PA_SAMPLE_S16NE;
@@ -35,9 +33,11 @@ void * reception(void * sockID){
 	    srand(time(0)); 
 		char name[]="talking-";
 		char randNum[4];
-		sprintf(randNum,"%d",rand());
+		printf(randNum,"%d",rand());
 		strcat(name,randNum);
 		s2 = pa_simple_new(NULL,name,PA_STREAM_PLAYBACK,NULL,name,&ss,NULL,NULL,NULL);
+
+//		KEEP ON RECEIVING AND THEN PLAYING AUDIO FROM SERVER 
 
 		while(1)
 		{
@@ -45,16 +45,11 @@ void * reception(void * sockID){
     		int error;
 			int read = recv(clientSocket,data,BUFSIZE,NULL);
 			if(read==-1){printf("FAILED TO RECIEVE FROM SERVER\n");}
-			if( pa_simple_read(s2,data,BUFSIZE,NULL)){};//{printf("error playing\n");fprintf(stderr, __FILE__": pa_simple_read() failed: %s\n", pa_strerror(error));}
+			if( pa_simple_read(s2,data,BUFSIZE,NULL)){};
 			pa_simple_write(s2,data,BUFSIZE,NULL);
 	    	pa_simple_flush(s2,NULL);
-//	    	pa_simple_free(s2);
 			fflush(stdin);
 		}
-
-
-//		if(strcmp(read,request)){requestFlag=1;}
-//		if(strcmp(read,acknowlegment)){acknowlegmentFlag=1;}
 
 
 
@@ -93,8 +88,11 @@ int main(int argc,char *argv[]){
 
 	printf("CONNECTED TO THE SERVER\n");
 	printf("my port no:  %d\n",clientSocket);
+
 //	INTRODUCE MYSELF WITH USERNAME
 	send(clientSocket,username,1024,0);
+
+//	SPAWNING A THREAD FOR RECEPTION OF AUDIO FROM SERVER
 
 	pthread_t thread;
 	pthread_create(&thread, NULL, reception, (void *) &clientSocket );
@@ -103,6 +101,7 @@ int main(int argc,char *argv[]){
 	signal(SIGINT, catch);
 
 //	DECLARING AND SETTING ATTRIBUTES OF AUDIO - SAMPLING AND NO OF CHANNELS
+
 	pa_simple *s1;
 	pa_sample_spec ss;
 	ss.format = PA_SAMPLE_S16NE;
@@ -110,28 +109,23 @@ int main(int argc,char *argv[]){
 	ss.rate = 48000;
 	int buf[BUFSIZE];
 
-//	RECORDS WHENEVER USER HITS ENTER
+//	GENERATING AUDIO-IN CONNECTION WITH RANDOM NAME
+
     srand(time(0)); 
 	char name[]="listening-";
 	char randNum[4];
 	sprintf(randNum,"%d",rand());
 	strcat(name,randNum);
 	char ch[2];
-//	while(fgets(ch,2,stdin)&&(!request)&&(acknowlegment))
-//	while(fgets(ch,2,stdin))
+
 	s1 = pa_simple_new(NULL,name,PA_STREAM_RECORD,NULL,name,&ss,NULL,NULL,NULL);
 	while(1)
 	{
-
-//	CREATING AND CONNECTING STREAMS FOR RECORDING AND PLAYBACK 
-
-//	READ RECORDED INTO BUFFER		
-//		printf("you're in!\n");
+//	READ RECORDED INTO BUFFER	
 		if( pa_simple_read(s1,buf,BUFSIZE,NULL)<0){printf("error recording\n");}
 
 //	FLUSH AND FREE THE STREAM
 		pa_simple_flush(s1,NULL);
-//		pa_simple_free(s1);
 
 //	SEND THE RECORDED AUDIO
 		if(send(clientSocket,buf,BUFSIZE,NULL)==-1){printf("FAILED TO SEND TO SERVER\n");};
