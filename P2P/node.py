@@ -45,6 +45,7 @@ def parentCommuncation(socket):
 		if (killSwitch==1):
 			socket.send("BYE-BYE")
 			socket.close()
+			break
 		# MAINTAINS A LIST OF POSSIBLE INPUT STREAMS 
 		sockets_list = [sys.stdin, socket] 
 		read_sockets,write_socket, error_socket = select.select(sockets_list,[],[]) 
@@ -79,18 +80,27 @@ list_of_peers = []
 
 def peerthread(conn, addr): 
 
+	global killSwitch
 	# WELCOME TEXT
 	conn.send("welcome to P2P chat! "+ "<" + addr[0] + " : " + addr[1] + "> ") 
 
-	while True: 
+	while True:
+		if killSwitch:
+			conn.send("BYE-BYE")
+			if not noParent:
+				conn.send(str(parentPort))
+			conn.close()
 		try: 
 			message = conn.recv(2048) 
 			if message: 
+
 				# PRINT RECEIVED MSG
 				print("<" + addr[0] + " : " + addr[1] + "> " + message) 
+				
 				# FORWARD TO OTHER PEERS
 				message_to_send = "<" + addr[0] + " : " + addr[1] + "> " + message
 				forward(message_to_send, conn) 
+			
 			else: 
 				remove(conn) 
 
