@@ -1,4 +1,4 @@
-QQ#include <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -23,32 +23,18 @@ void * reception(void * sockID){
 
 // 		CREATING CONNECTION FROM SERVER FOR AUDIO-OUT
 
-		pa_simple *s2;
-		pa_sample_spec ss;
-		ss.format = PA_SAMPLE_S16NE;
-		ss.channels = 2;
-		ss.rate = 48000;
 		int clientSocket = *((int *) sockID);
 	
 	    srand(time(0)); 
-		char name[]="talking-";
-		char randNum[4];
-		printf(randNum,"%d",rand());
-		strcat(name,randNum);
-		s2 = pa_simple_new(NULL,name,PA_STREAM_PLAYBACK,NULL,name,&ss,NULL,NULL,NULL);
 
 //		KEEP ON RECEIVING AND THEN PLAYING AUDIO FROM SERVER 
-
 		while(1)
 		{
 			int data[BUFSIZE];
     		int error;
 			int read = recv(clientSocket,data,BUFSIZE,NULL);
 			if(read==-1){printf("FAILED TO RECIEVE FROM SERVER\n");}
-			if( pa_simple_read(s2,data,BUFSIZE,NULL)){};
-			pa_simple_write(s2,data,BUFSIZE,NULL);
-	    	pa_simple_flush(s2,NULL);
-			fflush(stdin);
+			printf("",)	
 		}
 
 
@@ -79,7 +65,6 @@ int main(int argc,char *argv[]){
 	int clientSocket = socket(PF_INET, SOCK_STREAM, 0);
 
 //	SETTING SERVER ATTRIBUTES
-
 	struct sockaddr_in serverAddr;
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_port = htons(port);
