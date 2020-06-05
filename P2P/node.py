@@ -37,9 +37,13 @@ myPort = int(sys.argv[2])
 #====================== CONNECT TO PARENT - AND COMMUNICATION BETWEEN NODE AND PARENT =====================================#  
 # CONNECT TO PARENT
 
+reconnect=0 # SET IF PARENT LEAVES
+
 def parentCommuncation(socket):
 	global killSwitch
 	global list_of_peers
+	global reconnect
+
 	while True: 
 		# DISCONNECT ON SIGINT
 		if (killSwitch==1):
@@ -53,8 +57,15 @@ def parentCommuncation(socket):
 		for socks in read_sockets: 
 			if socks == socket: 
 				message = socks.recv(2048) 
-				forward(message,socks)
-				print(message) 
+				if(message=="BYE-BYE"):
+					reconnect=1
+					newParent=socks.recv(2048)
+					socks.close()
+					socks.connect((IP_address,int(newParent)))
+
+				else:
+					forward(message,socks)
+					print(message) 
 			else: 
 				message = sys.stdin.readline() 
 				socket.send(message) 
@@ -92,7 +103,7 @@ def peerthread(conn, addr):
 			conn.close()
 		try: 
 			message = conn.recv(2048) 
-			if message: 
+			if message:
 
 				# PRINT RECEIVED MSG
 				print("<" + addr[0] + " : " + addr[1] + "> " + message) 
