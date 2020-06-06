@@ -5,14 +5,9 @@ import sys
 import pickle
 import time
 from _thread import *
-import random
+
 killSwitch=0
 list_of_peers=[]
-
-oldTags=[]
-myTag=""
-welcomeText=0
-
 #==============================================INTIALIZATION================================================================#
 
 # CREATE SOCKETS 
@@ -41,21 +36,6 @@ else:
 
 myPort = int(sys.argv[3]) 
 
-#==============================================CATCH CTRL-C================================================================#
-#==========================================DISCONNECT FROM PARENT==========================================================# 
-#====================================AND POINT CHILDREN PEERS TO PARENT ===================================================#
-
-
-def exit_handler(sig, frame):
-	global killSwitch
-	print('you wanna exit? (Y/N)')
-	answer=sys.stdin.readline()
-	if(answer=="Y" or  answer=="y"):
-		killSwitch=1
-		time.sleep(5)
-	sys.exit(0)
-signal.signal(signal.SIGINT, exit_handler)
-
 #====================== CONNECT TO PARENT - AND COMMUNICATION BETWEEN NODE AND PARENT =====================================#  
 # CONNECT TO PARENT
 
@@ -67,16 +47,8 @@ def parentCommuncation(socket):
 	global reconnect
 	global myID
 	global myPort
-	global welcomeText
-	global myTag
-	global oldTags
 
-	if not welcomeText:
-		myTag=str(random.randint(0,999))
-		socket.sendall((myTag+" Sup everybody! this is"+myID).encode('utf-8'))
-		welcomeText=1
 	list_of_peers.append(socket)
-
 	while True: 
 		# DISCONNECT ON SIGINT
 		if (killSwitch==1):
@@ -86,6 +58,7 @@ def parentCommuncation(socket):
 		# MAINTAINS A LIST OF POSSIBLE INPUT STREAMS 
 		sockets_list = [sys.stdin, socket] 
 		read_sockets,write_socket, error_socket = select.select(sockets_list,[],[]) 
+		socket.sendall(("Sup everybody! this is"+myID).encode('utf-8'))
 		for socks in read_sockets: 
 			if socks == socket: 
 				message = (socks.recv(2048)).decode('utf-8') 
@@ -95,24 +68,17 @@ def parentCommuncation(socket):
 					socks.close()
 					socks.connect((IP_address,int(newParent)))
 				elif(message=="ping me your port"):
-					socks.sendall(str(myPort).encode('utf-8'))
+					socks.sendall(str(myPort))
 				else:
-					# PRINT RECEIVED MSG
-					tagAndMessage=message.split(' ', 1)
-					if(tagAndMessage[0] not in oldTags):
-						print(tagAndMessage[1]) 
-						forward(message,socks,"None")
-						oldTags.append(tagAndMessage[0])
-
+					forward(message,socks)
+					print(message) 
 			else: 
 				message = sys.stdin.readline()
 				messageWithInfo="<" + myID+"> "+ message
-				myTag=str(random.randint(0,999))
-				oldTags.append(myTag)
-				socket.sendall((myTag +" "+messageWithInfo).encode('utf-8'))
+				socket.sendall(messageWithInfo.encode('utf-8')) 
 				sys.stdout.write("<You>") 
 				sys.stdout.write(message) 
-				forward(messageWithInfo,None,myTag)
+				forward(messageWithInfo,None)
 				sys.stdout.flush() 
 
 if not noParent:
@@ -136,14 +102,10 @@ def peerthread(conn, addr):
 	global myPort
 	global client
 	global parentPort
+
 	if noParent:
 		conn.sendall(("ping me your port").encode('utf-8'))
-#		print("<no parent for me, asked for port of child>")
-		print((conn.recv(2048).decode('utf-8')))
 		parentPort=int((conn.recv(2048)).decode('utf-8'))
-#		print("<child says "+str(parentPort))
-		client.connect((IP_address,parentPort))
-		start_new_thread(parentCommuncation,(client,))
 	# WELCOME TEXT
 #	conn.sendall(("welcome to P2P chat! "+ "<" + str(addr[0]) + " : " + str(addr[1]) + "> ").encode('utf-8')) 
 
@@ -158,15 +120,13 @@ def peerthread(conn, addr):
 			if message:
 
 				# PRINT RECEIVED MSG
-				tagAndMessage=message.split(' ', 1)
-				if(tagAndMessage[0] not in oldTags):
-					print(tagAndMessage[1]) 
-					oldTags.append(tagAndMessage[0])					
-					# FORWARD TO OTHER PEERS
-					message_to_send=message
-					# message_to_send = "<" + str(addr[0]) + " : " + str(addr[1]) + "> " + message
-					forward(message_to_send, conn,"None") 
+				print( message) 
 				
+				# FORWARD TO OTHER PEERS
+				message_to_send=message
+				# message_to_send = "<" + str(addr[0]) + " : " + str(addr[1]) + "> " + message
+				forward(message_to_send, conn) 
+			
 			else: 
 				remove(conn) 
 
@@ -174,14 +134,11 @@ def peerthread(conn, addr):
 			continue
 
 # FORWARD TO CONNECTED CLIENTS
-def forward(message, connection,tag): 
+def forward(message, connection): 
 	for peers in list_of_peers: 
 		if peers!=connection: 
 			try: 
-				if(tag=="None"):
-					peers.sendall((message).encode('utf-8')) 
-				else:
-					peers.sendall((tag+" "+ message).encode('utf-8')) 
+				peers.sendall(message.encode('utf-8')) 
 			except: 
 				peers.close() 
 
@@ -198,20 +155,38 @@ while True:
 	# ACCEPT INCOMING CONNECTIONS
 	conn, addr = server.accept() 
 	
+	# CONNECT TO FIRST INCOMING PEER AS CHILD TOO, IF NO PARENT
+	if(noParent):
+		while not ("parentPort" in globals()): continue
+		client.connect((IP_address,parentPort))
+		start_new_thread(parentCommuncation,(client,))
+		noParent=0
+
 	# APPEND THE NEW CONNECTION
 	list_of_peers.append(conn) 
 
 	# PRINTS THE ADDRESS AND PORT OF THE NEW CONNCTION THAT JUST CONNECTED 
-#	print(str(addr[0]) + " : " + str(addr[1]) + " connected")
+	print(str(addr[0]) + " : " + str(addr[1]) + " connected")
 
 	# CREATES AN INDIVIDUAL THREAD FOR EVERY PEER CONNECTION
 	start_new_thread(peerthread,(conn,addr,))	 
-
-
-
-
 
 conn.close() 
 server.close() 
 
 
+
+#==============================================CATCH CTRL-C================================================================#
+#==========================================DISCONNECT FROM PARENT==========================================================# 
+#====================================AND POINT CHILDREN PEERS TO PARENT ===================================================#
+
+
+def exit_handler(sig, frame):
+	global killSwitch
+	print('you wanna exit? (Y/N)')
+	if(input=="Y" or  input=="y"):
+		killSwitch=1
+		time.sleep(2)
+	sys.exit(0)
+
+signal.signal(signal.SIGINT, exit_handler)
