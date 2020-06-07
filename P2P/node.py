@@ -134,6 +134,7 @@ def reconnectHandler():
 
 	print("<DONE RECONNECTING>")
 	reconnect=0
+	reconnectHandler()
 
 x=threading.Thread(target=reconnectHandler,daemon=True)
 reconnectThreads.append(x)
