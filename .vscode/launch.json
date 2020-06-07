@@ -9,7 +9,7 @@
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/P2P/node.py",
-            "args": ["imRoot","None","11011"],
+            "args": ["imRoot","11011"],
             "console": "integratedTerminal"
         },
         {
@@ -17,7 +17,7 @@
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/P2P/node.py",
-            "args": ["new1","11011","11012"],
+            "args": ["new1","11012"],
             "console": "integratedTerminal"
         },
         {
@@ -25,7 +25,7 @@
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/P2P/node.py",
-            "args": ["new2","11012","11013"],
+            "args": ["new2","11013"],
             "console": "integratedTerminal"
         },
         {
@@ -33,7 +33,7 @@
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/P2P/node.py",
-            "args": ["new3","11013","11014"],
+            "args": ["new3","11014"],
             "console": "integratedTerminal"
         }
     ]

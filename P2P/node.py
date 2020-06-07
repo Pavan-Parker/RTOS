@@ -7,8 +7,10 @@ import time
 import threading 
 import random
 import os
+import fileinput
 
 killSwitch=0 #signifies if node is exiting the network
+
 
 allThreads=[]
 list_of_peers=[]
@@ -38,10 +40,10 @@ server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 ## CLIENT SOCKET TO JOIN INTO THE EXISTING NETWORK
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.settimeout(0.2)
+
 #ARG HELP
-if len(sys.argv) != 4: 
-	print("Correct usage: script, your ID,  parent connection port number, your port number")
+if len(sys.argv) != 3: 
+	print("Correct usage: script, your ID, your port number")
 	exit() 
 
 # ARG PARSING 
@@ -49,13 +51,24 @@ IP_address = "127.0.0.1"
 
 noParent=0	# SIGNIFIES IF NODE IS FIRST IN THE NETWORK
 myID=sys.argv[1]  
-if(sys.argv[2] == "None"):
+myPort = int(sys.argv[2]) 
+
+availablePorts=[]
+file=open("P2P/ports.txt")
+for line in (list(file)):
+		availablePorts.append(line.rstrip())	
+for port in availablePorts:
+	if(port!=''):
+		break
+if(len(availablePorts)==0): port=""
+if(port == ""):
 	noParent=1
 else:
-	parentPort=int(sys.argv[2])
-
-myPort = int(sys.argv[3]) 
-
+	parentPort=int(port)
+file.close()
+file=open('P2P/ports.txt','a')
+file.writelines(["\n"+str(myPort)])
+file.close()
 #==============================================CATCH CTRL-C================================================================#
 #==========================================DISCONNECT FROM PARENT==========================================================# 
 #====================================AND POINT CHILDREN PEERS TO PARENT ===================================================#
@@ -70,11 +83,21 @@ def exit_handler(sig, frame):
 		print("KILLING")
 		killSwitch=1
 		time.sleep(3)
-		sys.exit(0)
+
+		a_file = open("P2P/ports.txt", "r")
+		lines = a_file.readlines()
+		a_file.close()
+
+		new_file = open("P2P/ports.txt", "w")
+		for line in lines:
+			if (line.strip("\n") != (str(myPort)) ):
+				new_file.write(line)
+		new_file.close()
 	return
 
 signal.signal(signal.SIGINT, exit_handler)
 
+#==================================== RECONNECTION HANDLER IF PARENT LEAVES ===================================================#
 
 
 def reconnectHandler():
@@ -92,12 +115,18 @@ def reconnectHandler():
 		if(killSwitch):
 			closeReconnectThread=1
 			return
+	ports=[]
+	for line in reversed(list(open("P2P/ports.txt"))):
+    		ports.append(line.rstrip())	
+	for port in ports:
+		if(port!=''):
+			break
+	newParent=int(port)
 
 	print("< reconnect started >")
 	print("< new Parent port "+str(newParent)+" >")
 	client= socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	client.connect((IP_address,newParent))
-	client.settimeout(0.2)
 	x=threading.Thread(target=parentCommuncation,args=(client,),daemon=True)
 	parentThread.append(x)
 	x.start()
@@ -108,44 +137,6 @@ def reconnectHandler():
 x=threading.Thread(target=reconnectHandler,daemon=True)
 reconnectThreads.append(x)
 x.start()
-
-def threadCleaner():
-	global killSwitch
-	global closeParenThread
-	global closePeerThreads 	
-	global closeReconnectThread
-	lock = threading.Lock()
-	while True:
-
-		if(closeParenThread):
-			for t in parentThread:
-				t._stop()
-				print("Killed parentThread")
-			
-		if(closePeerThreads):
-			for t in peerThreads:
-				lock.acquire()
-				t._stop()
-				print("Killed peerThreads")
-
-		if(closeReconnectThread):
-			for t in reconnectThreads:
-				lock.acquire()
-				t._stop()
-				print("Killed reconnectThread")
-
-		if(closeParenThread and closePeerThreads and closeReconnectThread):
-			for t in allThreads:
-				lock.acquire()
-				t._stop()
-				print("Killed allTHreads")
-				return
-		time.sleep(2)
-
-#x=threading.Thread(target=threadCleaner,daemon=True)
-#allThreads.append(x)
-#x.start()
-
 
 #====================== CONNECT TO PARENT - AND COMMUNICATION BETWEEN NODE AND PARENT =====================================#  
 # CONNECT TO PARENT
@@ -182,11 +173,11 @@ def parentCommuncation(socket):
 			socket.close()
 			print("exiting")
 			closeParenThread=1
-
+			
 			break
 		# MAINTAINS A LIST OF POSSIBLE INPUT STREAMS 
 		sockets_list = [sys.stdin, socket] 
-		read_sockets,write_socket, error_socket = select.select(sockets_list,[],[],0.3) 
+		read_sockets,write_socket, error_socket = select.select(sockets_list,[],[]) 
 		for socks in read_sockets: 
 			if socks == socket: 
 				
@@ -207,10 +198,8 @@ def parentCommuncation(socket):
 				elif (message=="seeya"):
 					print("parent says byebye")
 					reconnect=1
-					newParent=(socks.recv(2048)).decode('utf-8')
-					print("newParent port is "+str(newParent))
 					list_of_peers.remove(socket)
-					print("removed parent from peers too")
+					print("removed parent from peers")
 					socks.close()
 					print("thread exit")
 					closeParenThread=1
@@ -239,6 +228,7 @@ def parentCommuncation(socket):
 				forward(messageWithInfo,None,myTag)
 				sys.stdout.flush() 
 		if(breakWhile): break
+	return
 if not noParent:
 	client.connect((IP_address,parentPort))
 	x=threading.Thread(target=parentCommuncation,args=(client,),daemon=True)
@@ -298,7 +288,6 @@ def peerthread(conn, addr):
 			if message:
 				if message=="seeya":
 					break
-
 				# PRINT RECEIVED MSG
 				tagAndMessage=message.split(' ', 1)
 				if(tagAndMessage[0] not in oldTags):
