@@ -40,10 +40,10 @@ struct group Group[1024];
 
 pthread_t thread[1024];
 
-void * reception(void * attrClient){
+void * reception(void * attrClient1){
 
 //	SETTING CLIENT ATTRIBUTES
-	struct client* attrClient = (struct client*) attrClient;
+	struct client* attrClient = (struct client*) attrClient1;
 	int index = attrClient -> index;
 	int clientSocket = attrClient -> sockID;
 	char username[1024];
@@ -96,7 +96,7 @@ void * reception(void * attrClient){
 			int id=1025;
 
 			for(int i = 0 ; i < groupCount; i ++){			
-				If ( strcmp(data, (Group[i].username_g) ) ==0) {id = i;}
+				if ( strcmp(data, (Group[i].username_g) ) ==0) {id = i;}
 			}
 		
 			read = recv(clientSocket,data,1024,0);
