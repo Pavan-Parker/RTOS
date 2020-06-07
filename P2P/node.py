@@ -76,6 +76,7 @@ signal.signal(signal.SIGINT, exit_handler)
 
 
 def reconnectHandler():
+	global killSwitch
 	global newParent
 	global reconnect
 	global list_of_peers
@@ -105,6 +106,7 @@ reconnectThreads.append(x)
 x.start()
 
 def threadCleaner():
+	global killSwitch
 	global closeParenThread
 	global closePeerThreads 	
 	global closeReconnectThread
