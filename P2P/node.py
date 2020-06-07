@@ -6,7 +6,7 @@ import pickle
 import time
 import threading 
 import random
-
+import os
 
 killSwitch=0 #signifies if node is exiting the network
 
@@ -38,7 +38,7 @@ server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 ## CLIENT SOCKET TO JOIN INTO THE EXISTING NETWORK
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+client.settimeout(0.2)
 #ARG HELP
 if len(sys.argv) != 4: 
 	print("Correct usage: script, your ID,  parent connection port number, your port number")
@@ -69,6 +69,8 @@ def exit_handler(sig, frame):
 	if(answer=="Y" or  answer=="y"):
 		print("KILLING")
 		killSwitch=1
+		time.sleep(3)
+		sys.exit(0)
 	return
 
 signal.signal(signal.SIGINT, exit_handler)
@@ -93,7 +95,9 @@ def reconnectHandler():
 
 	print("< reconnect started >")
 	print("< new Parent port "+str(newParent)+" >")
+	client= socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	client.connect((IP_address,newParent))
+	client.settimeout(0.2)
 	x=threading.Thread(target=parentCommuncation,args=(client,),daemon=True)
 	parentThread.append(x)
 	x.start()
@@ -168,19 +172,21 @@ def parentCommuncation(socket):
 		welcomeText=1
 	list_of_peers.append(socket)
 
+	breakWhile=0
 	while True: 
 		# DISCONNECT ON SIGINT
 		if (killSwitch):
 			print("KILLSWITCH")
-			print("sent byebye to parent")
-			socket.sendall(("BYE-BYE").encode('utf-8'))
+			print("<sent byebye to parent>")
+			socket.sendall(("seeya").encode('utf-8'))
 			socket.close()
 			print("exiting")
 			closeParenThread=1
-			return
+
+			break
 		# MAINTAINS A LIST OF POSSIBLE INPUT STREAMS 
 		sockets_list = [sys.stdin, socket] 
-		read_sockets,write_socket, error_socket = select.select(sockets_list,[],[]) 
+		read_sockets,write_socket, error_socket = select.select(sockets_list,[],[],0.3) 
 		for socks in read_sockets: 
 			if socks == socket: 
 				
@@ -188,14 +194,17 @@ def parentCommuncation(socket):
 				
 				print("<LOG MESSAGE > "+"<"+message+">")
 				if(message==''):
+					reconnect=1
 					print("GOT ERROR")
 					list_of_peers.remove(socket)
 					print("removed parent from peers too")
 					socks.close()
 					print("thread exit")
 					closeParenThread=1
-					return
-				elif (message=="BYE-BYE"):
+					breakWhile=1
+					break
+					
+				elif (message=="seeya"):
 					print("parent says byebye")
 					reconnect=1
 					newParent=(socks.recv(2048)).decode('utf-8')
@@ -205,7 +214,8 @@ def parentCommuncation(socket):
 					socks.close()
 					print("thread exit")
 					closeParenThread=1
-					return
+					breakWhile=1
+					break
 
 				elif(message=="ping me your port"):
 					socks.sendall(str(myPort).encode('utf-8'))
@@ -228,7 +238,7 @@ def parentCommuncation(socket):
 				sys.stdout.write(message) 
 				forward(messageWithInfo,None,myTag)
 				sys.stdout.flush() 
-
+		if(breakWhile): break
 if not noParent:
 	client.connect((IP_address,parentPort))
 	x=threading.Thread(target=parentCommuncation,args=(client,),daemon=True)
@@ -260,7 +270,7 @@ def peerthread(conn, addr):
 	if noParent:
 		conn.sendall(("ping me your port").encode('utf-8'))
 #		print("<no parent for me, asked for port of child>")
-		print((conn.recv(2048).decode('utf-8')))
+		print(((conn.recv(2048)).decode('utf-8')))
 		parentPort=int((conn.recv(2048)).decode('utf-8'))
 #		print("<child says "+str(parentPort))
 		client.connect((IP_address,parentPort))
@@ -272,19 +282,22 @@ def peerthread(conn, addr):
 
 	while True:
 		if killSwitch:
-			conn.sendall(("BYE-BYE").encode('utf-8'))
+			conn.sendall(("seeya").encode('utf-8'))
+
 			if not noParent:
 				conn.sendall(str(parentPort).encode('utf-8'))
 			else:
 				conn.sendall(("noParent").encode('utf-8'))
 			conn.close()
 			closePeerThreads=1	
-			return
+			break
 
 
 		try: 
 			message = (conn.recv(2048)).decode('utf-8')
 			if message:
+				if message=="seeya":
+					break
 
 				# PRINT RECEIVED MSG
 				tagAndMessage=message.split(' ', 1)
