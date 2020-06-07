@@ -93,6 +93,7 @@ def exit_handler(sig, frame):
 			if (line.strip("\n") != (str(myPort)) ):
 				new_file.write(line)
 		new_file.close()
+		sys.exit(0)
 	return
 
 signal.signal(signal.SIGINT, exit_handler)
@@ -183,7 +184,7 @@ def parentCommuncation(socket):
 				
 				message = (socks.recv(2048)).decode('utf-8') 
 				
-				print("<LOG MESSAGE > "+"<"+message+">")
+#				print("<LOG MESSAGE > "+"<"+message+">")
 				if(message==''):
 					reconnect=1
 					print("GOT ERROR")
@@ -264,6 +265,7 @@ def peerthread(conn, addr):
 		parentPort=int((conn.recv(2048)).decode('utf-8'))
 #		print("<child says "+str(parentPort))
 		client.connect((IP_address,parentPort))
+		noParent=0
 		x=threading.Thread(target=parentCommuncation,args=(client,),daemon=True)
 		parentThread.append(x)
 		x.start()
